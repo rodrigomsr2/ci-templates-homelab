@@ -1,0 +1,13 @@
+# Sistemas operacionais
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Variáveis de ambiente locais — nunca commitar secrets
+.env
+.env.*

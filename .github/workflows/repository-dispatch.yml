@@ -1,0 +1,42 @@
+name: Repository Dispatch
+
+on:
+  workflow_call:
+    inputs:
+      owner:
+        description: 'Dono dos repositórios (ex: rodrigomsr2)'
+        type: string
+        default: 'rodrigomsr2'
+      target-repo:
+        description: 'Repositório de destino do evento (ex: ci-homelab)'
+        type: string
+        required: true
+      event-type:
+        description: 'Tipo do evento disparado (ex: nexus-argocd-push)'
+        type: string
+        required: true
+    secrets:
+      dispatch-token:
+        description: 'PAT com permissão repo no repositório de destino'
+        required: true
+
+jobs:
+  dispatch:
+    name: Repository Dispatch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Disparar evento no repositório de destino
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.dispatch-token }}
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: '${{ inputs.owner }}',
+              repo: '${{ inputs.target-repo }}',
+              event_type: '${{ inputs.event-type }}',
+              client_payload: {
+                sha: context.sha,
+                ref: context.ref
+              }
+            })

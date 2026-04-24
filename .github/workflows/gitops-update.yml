@@ -1,0 +1,66 @@
+name: GitOps Update
+
+on:
+  workflow_call:
+    inputs:
+      gitops-repo:
+        description: 'Repositório GitOps (ex: owner/k8s-gitops)'
+        type: string
+        required: true
+      gitops-branch:
+        description: 'Branch do repositório GitOps'
+        type: string
+        default: 'main'
+      manifest-path:
+        description: 'Path do arquivo YAML no repositório GitOps'
+        type: string
+        required: true
+      yq-expression:
+        description: 'Expressão yq que endereça o campo a atualizar'
+        type: string
+        required: true
+      new-value:
+        description: 'Novo valor a ser escrito no campo'
+        type: string
+        required: true
+      commit-message:
+        description: 'Mensagem de commit (opcional — gerada automaticamente se omitida)'
+        type: string
+        default: ''
+    secrets:
+      gitops-token:
+        description: 'PAT com permissão de escrita no repositório GitOps'
+        required: true
+
+jobs:
+  gitops:
+    name: GitOps Update
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout k8s-gitops
+        uses: actions/checkout@v4.2.2
+        with:
+          repository: ${{ inputs.gitops-repo }}
+          token: ${{ secrets.gitops-token }}
+          ref: ${{ inputs.gitops-branch }}
+
+      - name: Instalar yq
+        uses: mikefarah/yq@v4.44.3
+
+      - name: Atualizar campo no manifest
+        run: |
+          yq -i '(${{ inputs.yq-expression }}) = "${{ inputs.new-value }}"' \
+            ${{ inputs.manifest-path }}
+
+      - name: Commit e push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ${{ inputs.manifest-path }}
+          git diff --cached --quiet && echo "Nenhuma mudança detectada, pulando commit." && exit 0
+          git commit -m "${{ inputs.commit-message != '' && inputs.commit-message || format('chore(gitops): update {0}', inputs.manifest-path) }}"
+          git push
