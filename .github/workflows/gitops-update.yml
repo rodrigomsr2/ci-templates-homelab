@@ -42,14 +42,14 @@ jobs:
 
     steps:
       - name: Checkout k8s-gitops
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
         with:
           repository: ${{ inputs.gitops-repo }}
           token: ${{ secrets.gitops-token }}
           ref: ${{ inputs.gitops-branch }}
 
       - name: Instalar yq
-        uses: mikefarah/yq@v4.44.3
+        uses: mikefarah/yq@v4.53.2
 
       - name: Atualizar campo no manifest
         run: |
